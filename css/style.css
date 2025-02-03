@@ -27,3 +27,30 @@ a#github {
 #inlinecodeblock {
     border: 1px solid #000;
 }
+
+
+:root {
+    color-scheme: light dark;
+}
+
+
+/* for older browser that do not support light-dark */
+@media (prefers-color-scheme: light) {
+    body {
+        color: black;
+        background-color: white;
+    }
+}
+
+/* for older browser that do not support light-dark */
+@media (prefers-color-scheme: dark) {
+    body {
+        color: white;
+        background-color: #1C1B22;
+    }
+}
+
+.element {
+    color: light-dark(black, white);
+    background-color: light-dark(white, #1C1B22);
+}
