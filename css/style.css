@@ -1,0 +1,16 @@
+h1#title {
+    text-align: center;
+}
+h2#blogname {
+    text-align: center;
+}
+a#home {
+    position: absolute;
+    top: 4vmin;
+    left: 4vmin;
+}
+a#github {
+    position: absolute;
+    top: 4vmin;
+    right: 4vmin;
+}
