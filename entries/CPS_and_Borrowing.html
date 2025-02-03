@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Continuations and Ownership - Rust</title>
+    <title>Continuation Passing Style and Borrowing in Rust</title>
     <link href="../css/style.css" rel="stylesheet">
 </head>
 
@@ -12,7 +12,7 @@
     <h3><a id=home href="../index.html">home</a></h3>
     <h3><a id=github href="https://github.com/mendelsshop">github</a></h3>
     <h2 id=blogname>Mendelsshop's Blog </h2>
-    <h1 id=title>Continuations and Ownership in Rust</h1>
+    <h1 id=title>Continuation Passing Style and Borrowing in Rust</h1>
 
     <!-- TODO: headings -->
     <!-- TODO: more explanation/fluff -->
@@ -63,7 +63,7 @@ fn foo_is&lt'a&gt(words: HashMap&ltString, String&gt) -> Option&lt&'a String&gt 
     </p>
 
     <p>
-        A better approach might be to use continuations (an idea I learned from scheme).
+        A better approach might be to use continuation passing style (an idea I learned from scheme).
     <pre id=codeblock><code><!-- beautify ignore:start -->fn foo_is&ltT&gt(words: HashMap<String, String>, k: impl FnOnce(Option<&'_ String>) -> T) -> T  {
     k(words.get("foo"))
 }<!-- beautify ignore:end --></code>
@@ -72,6 +72,8 @@ fn foo_is&lt'a&gt(words: HashMap&ltString, String&gt) -> Option&lt&'a String&gt 
     Here the <code id=inlinecodeblock>k</code> parameter stands for continuation (notation taken from scheme).<br>
     <code id=inlinecodeblock>k</code> tells <code id=inlinecodeblock>foo_is</code> what to do next (with what it would
     have just previously returned).<br>
+    This is called continuation passing style (it is often used to make a function stack safe when there is tail call
+    elimination avaliable).<br>
     No more pesky borrowing errors and no cloning required.<br>
     If the caller needs an owned value the caller can do that with the continuation (we have passed this desicion back
     to the caller).
