@@ -14,6 +14,88 @@
     <h2 id=blogname>Mendelsshop's Blog </h2>
     <h1 id=title>Continuations and Ownership in Rust</h1>
 
+    <!-- TODO: headings -->
+    <!-- TODO: more explanation/fluff -->
+    <!-- TODO: grammar -->
+    <p>
+        Lets say you have a function like this:
+
+    <pre id=codeblock><code><!-- beautify ignore:start -->use std::collections::HashMap;
+fn main() {
+    let words = HashMap::from([("foo".to_owned(), "bar".to_owned())]);
+    if foo_is(words).is_some_and(|x| x == "bar") {
+        println!("foo is bar");
+    }
+}
+
+// very contrived example
+fn foo_is&lt'a&gt(words: HashMap&ltString, String&gt) -> Option&lt&'a String&gt {
+    words.get("foo")
+}<!-- beautify ignore:end --></code>
+    </pre>
+    When we try to compile this we will be greated with an error:
+    <pre id=codeblock><code><!-- beautify ignore:start -->error[E0515]: cannot return value referencing function parameter `words`
+ --> src/main.rs:8:5
+   |
+11 |     words.get("foo")
+   |     -----^^^^^^^^^^^
+   |     |
+   |     returns a value referencing data owned by the current function
+   |     `words` is borrowed here <!-- beautify ignore:end --> </code>
+    </pre>
+    </p>
+
+    <p>
+        In this contrived example we could certainly just take a reference to word,<br>but for the sake of this blog let
+        us
+        pretend we cannot do do this<br>(either because we are bound to some api or because we are not dealing with
+        contrived
+        examples).
+        <br>
+        In that case one option might be to clone the value instead:
+    <pre id=codeblock><code><!-- beautify ignore:start -->fn foo_is(words: HashMap<String, String>) -> Option&ltString&gt {
+    words.get("foo").cloned()
+}<!-- beautify ignore:end --></code>
+    </pre>
+
+    Cloning can be expensive and in our case unnecessary (if we were to inline <code id=inlinecodeblock>foo_is</code>,
+    we would not have any errors).
+    </p>
+
+    <p>
+        A better approach might be to use continuations (an idea I learned from scheme).
+    <pre id=codeblock><code><!-- beautify ignore:start -->fn foo_is&ltT&gt(words: HashMap<String, String>, k: impl FnOnce(Option<&'_ String>) -> T) -> T  {
+    k(words.get("foo"))
+}<!-- beautify ignore:end --></code>
+    </pre>
+
+    Here the <code id=inlinecodeblock>k</code> parameter stands for continuation (notation taken from scheme).<br>
+    <code id=inlinecodeblock>k</code> tells <code id=inlinecodeblock>foo_is</code> what to do next (with what it would
+    have just previously returned).<br>
+    No more pesky borrowing errors and no cloning required.<br>
+    If the caller needs an owned value the caller can do that with the continuation (we have passed this desicion back
+    to the caller).
+    </p>
+
+    <p>
+
+        Coming back to our full example we now have:
+    <pre id=codeblock><code><!-- beautify ignore:start -->use std::collections::HashMap;
+fn main() {
+    let words = HashMap::from([("foo".to_owned(), "bar".to_owned())]);
+    if foo_is(words, |x| x.is_some_and(|x| x == "bar")) {
+        println!("foo is bar");
+    }
+}
+
+// very contrived example
+fn foo_is<T>(words: HashMap<String, String>, k: impl FnOnce(Option<&'_ String>) -> T) -> T {
+    k(words.get("foo"))
+}<!-- beautify ignore:end --></code>
+    </pre>
+    </p>
+    <!-- TODO: &mut trick -->
+
 </body>
 
 </html>
