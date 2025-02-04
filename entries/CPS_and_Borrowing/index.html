@@ -5,12 +5,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Continuation Passing Style and Borrowing in Rust</title>
-    <link href="../css/style.css" rel="stylesheet">
+    <link href="../../css/style.css" rel="stylesheet">
 </head>
 
 <body>
     <div id="header">
-        <h3><a id="home" href="../index.html">home</a></h3>
+        <h3><a id="home" href="../../index.html">home</a></h3>
         <h3><a id="github" href="https://github.com/mendelsshop">github</a></h3>
         <h2 id="blogname">Mendelsshop's Blog </h2>
         <h1 id="title">Continuation Passing Style and Borrowing in Rust</h1>
@@ -35,8 +35,10 @@ fn main() {
 // very contrived example
 fn foo_is&lt;&#39;a&gt;(words: HashMap&lt;String, String&gt;) -&gt; Option&lt;&amp;&#39;a String&gt; {
     words.get(&quot;foo&quot;)
-}<!-- beautify ignore:end --></code></pre>
+}
+<!-- beautify ignore:end --></code></pre>
         When we try to compile this we will be greated with an error:
+
         <pre id="codeblock"><code><!-- beautify ignore:start -->error[E0515]: cannot return value referencing function parameter `words`
  --&gt; src/main.rs:8:5
    |
@@ -44,7 +46,8 @@ fn foo_is&lt;&#39;a&gt;(words: HashMap&lt;String, String&gt;) -&gt; Option&lt;&a
    |     -----^^^^^^^^^^^
    |     |
    |     returns a value referencing data owned by the current function
-   |     `words` is borrowed here<!-- beautify ignore:end --></code></pre>
+   |     `words` is borrowed here
+<!-- beautify ignore:end --></code></pre>
         </p>
     </div>
 
@@ -59,9 +62,11 @@ fn foo_is&lt;&#39;a&gt;(words: HashMap&lt;String, String&gt;) -&gt; Option&lt;&a
             examples).
             <br>
             In that case one option might be to clone the value instead:
+
         <pre id="codeblock"><code><!-- beautify ignore:start -->fn foo_is(words: HashMap&lt;String, String&gt;) -&gt; Option&lt;String&gt; {
     words.get(&quot;foo&quot;).cloned()
-}<!-- beautify ignore:end --></code></pre>
+}
+<!-- beautify ignore:end --></code></pre>
 
         Cloning can be expensive and in our case unnecessary (if we were to inline <code
             id="inlinecodeblock">foo_is</code>,
@@ -73,9 +78,11 @@ fn foo_is&lt;&#39;a&gt;(words: HashMap&lt;String, String&gt;) -&gt; Option&lt;&a
         <h4>The better solution</h4>
         <p>
             A better approach might be to use continuation passing style (an idea I learned from scheme).
-        <pre id="codeblock"><code><!-- beautify ignore:start -->fn foo_is&lt;T&gt;(words: HashMap&lt;String, String&gt;, k: impl FnOnce(Option&lt;&amp;&#39;_ String&gt;) -&gt; T) -&gt; T  {
+
+        <pre id="codeblock"><code><!-- beautify ignore:start -->fn foo_is&lt;T&gt;(words: HashMap&lt;String, String&gt;, k: impl FnOnce(Option&lt;&amp;&#39;_ String&gt;) -&gt; T) -&gt; T {
     k(words.get(&quot;foo&quot;))
-}<!-- beautify ignore:end --></code></pre>
+}
+<!-- beautify ignore:end --></code></pre>
 
         Here the <code id="inlinecodeblock">k</code> parameter stands for continuation (notation taken from scheme).<br>
         <code id="inlinecodeblock">k</code> tells <code id=inlinecodeblock>foo_is</code> what to do next (with what it
@@ -95,6 +102,7 @@ fn foo_is&lt;&#39;a&gt;(words: HashMap&lt;String, String&gt;) -&gt; Option&lt;&a
         <h4>Putting it all together</h4>
         <p>
             Coming back to our full example we now have:
+
         <pre id="codeblock"><code><!-- beautify ignore:start -->use std::collections::HashMap;
 
 fn main() {
@@ -107,14 +115,107 @@ fn main() {
 // very contrived example
 fn foo_is&lt;T&gt;(words: HashMap&lt;String, String&gt;, k: impl FnOnce(Option&lt;&amp;&#39;_ String&gt;) -&gt; T) -&gt; T {
     k(words.get(&quot;foo&quot;))
-}<!-- beautify ignore:end --></code></pre>
+}
+<!-- beautify ignore:end --></code></pre>
         </p>
     </div>
     <div id="muttrick">
         <h4>The <code id="inlinecodeblock">&mut</code> trick</h4>
-        <p></p>
+        <p>Lets say we have a slighty more complicated example that also involves mutability:
+
+        <pre id="codeblock"><code><!-- beautify ignore:start -->use std::collections::HashMap;
+
+fn main() {
+    let words = HashMap::from([(&quot;foo&quot;.to_owned(), &quot;bar&quot;.to_owned())]);
+    let otherwords = HashMap::from([(&quot;bar&quot;.to_owned(), &quot;baz&quot;.to_owned())]);
+    let mut counter = Counter(0);
+    if counter.foo_is(words, |x| {
+        x.is_some_and(|x| counter.bar_is(otherwords, |y| y.is_some_and(|y| y != x)))
+    }) {
+        println!(&quot;foo is not bar&quot;);
+    }
+}
+
+struct Counter(usize);
+
+impl Counter {
+    // very contrived example
+    fn foo_is&lt;T&gt;(
+        &amp;mut self,
+        words: HashMap&lt;String, String&gt;,
+        k: impl FnOnce(Option&lt;&amp;&#39;_ String&gt;) -&gt; T,
+    ) -&gt; T {
+        self.0 += 1;
+        k(words.get(&quot;foo&quot;))
+    }
+    fn bar_is&lt;T&gt;(
+        &amp;mut self,
+        words: HashMap&lt;String, String&gt;,
+        k: impl FnOnce(Option&lt;&amp;&#39;_ String&gt;) -&gt; T,
+    ) -&gt; T {
+        self.0 += 1;
+        k(words.get(&quot;bar&quot;))
+    }
+}
+<!-- beautify ignore:end --></code></pre>
+        When compiling this we will encouter an error:
+
+        <pre id="codeblock"><code><!-- beautify ignore:start -->error[E0499]: cannot borrow `counter` as mutable more than once at a time
+ --&gt; src/main.rs:7:8
+  |
+7 |       if counter.foo_is(words, |x| {
+  |          ^       ------        --- first mutable borrow occurs here
+  |          |       |
+  |  ________|       first borrow later used by call
+  | |
+8 | |         x.is_some_and(|x| counter.bar_is(otherwords, |y| y.is_some_and(|y| y != x)))
+  | |                           ------- first borrow occurs due to use of `counter` in closure
+9 | |     }) {
+  | |______^ second mutable borrow occurs here
+<!-- beautify ignore:end --></code></pre>
+        To fix this we can augment the continuation with a parameter of type <code id="inlinecodeblock">&amp;mut
+            Self</code>:
+
+        <pre id="codeblock"><code><!-- beautify ignore:start -->use std::collections::HashMap;
+
+fn main() {
+    let words = HashMap::from([(&quot;foo&quot;.to_owned(), &quot;bar&quot;.to_owned())]);
+    let otherwords = HashMap::from([(&quot;bar&quot;.to_owned(), &quot;baz&quot;.to_owned())]);
+    let mut counter = Counter(0);
+    if counter.foo_is(words, |new_counter_reference, x| {
+        x.is_some_and(|x| {
+            new_counter_reference.bar_is(otherwords, |_, y| y.is_some_and(|y| y != x))
+        })
+    }) {
+        println!(&quot;foo is not bar&quot;);
+    }
+}
+
+struct Counter(usize);
+
+impl Counter {
+    // very contrived example
+    fn foo_is&lt;T&gt;(
+        &amp;mut self,
+        words: HashMap&lt;String, String&gt;,
+        k: impl FnOnce(&amp;mut Self, Option&lt;&amp;&#39;_ String&gt;) -&gt; T,
+    ) -&gt; T {
+        self.0 += 1;
+        k(self, words.get(&quot;foo&quot;))
+    }
+    fn bar_is&lt;T&gt;(
+        &amp;mut self,
+        words: HashMap&lt;String, String&gt;,
+        k: impl FnOnce(&amp;mut Self, Option&lt;&amp;&#39;_ String&gt;) -&gt; T,
+    ) -&gt; T {
+        self.0 += 1;
+        k(self, words.get(&quot;bar&quot;))
+    }
+}
+<!-- beautify ignore:end --></code></pre>
+        </p>
+
     </div>
-    <!-- TODO: &mut trick -->
 
 </body>
 

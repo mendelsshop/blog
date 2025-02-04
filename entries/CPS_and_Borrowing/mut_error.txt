@@ -1,0 +1,12 @@
+error[E0499]: cannot borrow `counter` as mutable more than once at a time
+ --> src/main.rs:7:8
+  |
+7 |       if counter.foo_is(words, |x| {
+  |          ^       ------        --- first mutable borrow occurs here
+  |          |       |
+  |  ________|       first borrow later used by call
+  | |
+8 | |         x.is_some_and(|x| counter.bar_is(otherwords, |y| y.is_some_and(|y| y != x)))
+  | |                           ------- first borrow occurs due to use of `counter` in closure
+9 | |     }) {
+  | |______^ second mutable borrow occurs here
