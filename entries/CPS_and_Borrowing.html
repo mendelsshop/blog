@@ -10,10 +10,10 @@
 
 <body>
     <div id="header">
-        <h3><a id=home href="../index.html">home</a></h3>
-        <h3><a id=github href="https://github.com/mendelsshop">github</a></h3>
-        <h2 id=blogname>Mendelsshop's Blog </h2>
-        <h1 id=title>Continuation Passing Style and Borrowing in Rust</h1>
+        <h3><a id="home" href="../index.html">home</a></h3>
+        <h3><a id="github" href="https://github.com/mendelsshop">github</a></h3>
+        <h2 id="blogname">Mendelsshop's Blog </h2>
+        <h1 id="title">Continuation Passing Style and Borrowing in Rust</h1>
     </div>
 
     <!-- TODO: more explanation/fluff -->
@@ -23,28 +23,28 @@
         <p>
             Lets say you have a function like this:
 
-        <pre id=codeblock><code><!-- beautify ignore:start -->use std::collections::HashMap;
+        <pre id="codeblock"><code><!-- beautify ignore:start -->use std::collections::HashMap;
 
 fn main() {
-    let words = HashMap::from([("foo".to_owned(), "bar".to_owned())]);
-    if foo_is(words).is_some_and(|x| x == "bar") {
-        println!("foo is bar");
+    let words = HashMap::from([(&quot;foo&quot;.to_owned(), &quot;bar&quot;.to_owned())]);
+    if foo_is(words).is_some_and(|x| x == &quot;bar&quot;) {
+        println!(&quot;foo is bar&quot;);
     }
 }
 
 // very contrived example
-fn foo_is&lt'a&gt(words: HashMap&ltString, String&gt) -> Option&lt&'a String&gt {
-    words.get("foo")
+fn foo_is&lt;&#39;a&gt;(words: HashMap&lt;String, String&gt;) -&gt; Option&lt;&amp;&#39;a String&gt; {
+    words.get(&quot;foo&quot;)
 }<!-- beautify ignore:end --></code></pre>
         When we try to compile this we will be greated with an error:
-        <pre id=codeblock><code><!-- beautify ignore:start -->error[E0515]: cannot return value referencing function parameter `words`
- --> src/main.rs:8:5
+        <pre id="codeblock"><code><!-- beautify ignore:start -->error[E0515]: cannot return value referencing function parameter `words`
+ --&gt; src/main.rs:8:5
    |
-11 |     words.get("foo")
+11 |     words.get(&quot;foo&quot;)
    |     -----^^^^^^^^^^^
    |     |
    |     returns a value referencing data owned by the current function
-   |     `words` is borrowed here <!-- beautify ignore:end --> </code></pre>
+   |     `words` is borrowed here<!-- beautify ignore:end --></code></pre>
         </p>
     </div>
 
@@ -59,12 +59,12 @@ fn foo_is&lt'a&gt(words: HashMap&ltString, String&gt) -> Option&lt&'a String&gt 
             examples).
             <br>
             In that case one option might be to clone the value instead:
-        <pre id=codeblock><code><!-- beautify ignore:start -->fn foo_is(words: HashMap<String, String>) -> Option&ltString&gt {
-    words.get("foo").cloned()
+        <pre id="codeblock"><code><!-- beautify ignore:start -->fn foo_is(words: HashMap&lt;String, String&gt;) -&gt; Option&lt;String&gt; {
+    words.get(&quot;foo&quot;).cloned()
 }<!-- beautify ignore:end --></code></pre>
 
         Cloning can be expensive and in our case unnecessary (if we were to inline <code
-            id=inlinecodeblock>foo_is</code>,
+            id="inlinecodeblock">foo_is</code>,
         we would not have any errors).
         </p>
     </div>
@@ -73,12 +73,12 @@ fn foo_is&lt'a&gt(words: HashMap&ltString, String&gt) -> Option&lt&'a String&gt 
         <h4>The better solution</h4>
         <p>
             A better approach might be to use continuation passing style (an idea I learned from scheme).
-        <pre id=codeblock><code><!-- beautify ignore:start -->fn foo_is&ltT&gt(words: HashMap<String, String>, k: impl FnOnce(Option<&'_ String>) -> T) -> T  {
-    k(words.get("foo"))
+        <pre id="codeblock"><code><!-- beautify ignore:start -->fn foo_is&lt;T&gt;(words: HashMap&lt;String, String&gt;, k: impl FnOnce(Option&lt;&amp;&#39;_ String&gt;) -&gt; T) -&gt; T  {
+    k(words.get(&quot;foo&quot;))
 }<!-- beautify ignore:end --></code></pre>
 
-        Here the <code id=inlinecodeblock>k</code> parameter stands for continuation (notation taken from scheme).<br>
-        <code id=inlinecodeblock>k</code> tells <code id=inlinecodeblock>foo_is</code> what to do next (with what it
+        Here the <code id="inlinecodeblock">k</code> parameter stands for continuation (notation taken from scheme).<br>
+        <code id="inlinecodeblock">k</code> tells <code id=inlinecodeblock>foo_is</code> what to do next (with what it
         would
         have just previously returned).<br>
         This is called continuation passing style (it is often used to make a function stack safe when there is tail
@@ -95,23 +95,23 @@ fn foo_is&lt'a&gt(words: HashMap&ltString, String&gt) -> Option&lt&'a String&gt 
         <h4>Putting it all together</h4>
         <p>
             Coming back to our full example we now have:
-        <pre id=codeblock><code><!-- beautify ignore:start -->use std::collections::HashMap;
+        <pre id="codeblock"><code><!-- beautify ignore:start -->use std::collections::HashMap;
 
 fn main() {
-    let words = HashMap::from([("foo".to_owned(), "bar".to_owned())]);
-    if foo_is(words, |x| x.is_some_and(|x| x == "bar")) {
-        println!("foo is bar");
+    let words = HashMap::from([(&quot;foo&quot;.to_owned(), &quot;bar&quot;.to_owned())]);
+    if foo_is(words, |x| x.is_some_and(|x| x == &quot;bar&quot;)) {
+        println!(&quot;foo is bar&quot;);
     }
 }
 
 // very contrived example
-fn foo_is<T>(words: HashMap<String, String>, k: impl FnOnce(Option<&'_ String>) -> T) -> T {
-    k(words.get("foo"))
+fn foo_is&lt;T&gt;(words: HashMap&lt;String, String&gt;, k: impl FnOnce(Option&lt;&amp;&#39;_ String&gt;) -&gt; T) -&gt; T {
+    k(words.get(&quot;foo&quot;))
 }<!-- beautify ignore:end --></code></pre>
         </p>
     </div>
-    <div id=muttrick>
-        <h4>The <code id=inlinecodeblock>&mut</code> trick</h4>
+    <div id="muttrick">
+        <h4>The <code id="inlinecodeblock">&mut</code> trick</h4>
         <p></p>
     </div>
     <!-- TODO: &mut trick -->
