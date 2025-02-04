@@ -1,3 +1,7 @@
+:root {
+    color-scheme: light dark;
+}
+
 h1#title {
     text-align: center;
 }
@@ -19,18 +23,21 @@ a#github {
 }
 
 #codeblock {
-    border: 1px solid #000;
     display: block;
     white-space: pre-wrap;
+    max-width: max-content;
+    padding: 1vmin;
 }
 
 #inlinecodeblock {
-    border: 1px solid #000;
+    padding: 0.5vmin;
+
 }
 
-
-:root {
-    color-scheme: light dark;
+#inlinecodeblock,
+#codeblock {
+    border: 1px solid #000;
+    background-color: light-dark(lightgrey, #25242d);
 }
 
 
@@ -40,6 +47,11 @@ a#github {
         color: black;
         background-color: white;
     }
+
+    #inlinecodeblock,
+    #codeblock {
+        background-color: lightgrey;
+    }
 }
 
 /* for older browser that do not support light-dark */
@@ -47,6 +59,12 @@ a#github {
     body {
         color: white;
         background-color: #1C1B22;
+    }
+
+    #inlinecodeblock,
+    #codeblock {
+
+        background-color: #25242d
     }
 }
 
