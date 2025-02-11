@@ -48,6 +48,10 @@ fn foo_is&lt;&#39;a&gt;(words: HashMap&lt;String, String&gt;) -&gt; Option&lt;&a
    |     returns a value referencing data owned by the current function
    |     `words` is borrowed here
 <!-- beautify ignore:end --></code></pre>
+        This happens because (as the error message expains) <code id="inlinecodeblock">is_foo</code> takes ownership of
+        <code id="inlinecodeblock">words</code>,<br> and <code id="inlinecodeblock">words</code> gets dropped once <code
+            id="inlinecodeblock">is_foo</code> is done,<br> so any references to <code id="inlinecodeblock">words</code>
+        will be invalid.
         </p>
     </div>
 
@@ -94,7 +98,9 @@ fn foo_is&lt;&#39;a&gt;(words: HashMap&lt;String, String&gt;) -&gt; Option&lt;&a
         No more pesky borrowing errors and no cloning required.<br>
         If the caller needs an owned value the caller can do that with the continuation (we have passed this desicion
         back
-        to the caller).
+        to the caller).<br>
+        Remember how I said if we inlined <code id="inlinecodeblock">is_foo</code>, we would not have any errors, what
+        we are doing is essentially reverse inlining (a made up term for inlining into the called function).
         </p>
     </div>
 
@@ -158,6 +164,7 @@ impl Counter {
     }
 }
 <!-- beautify ignore:end --></code></pre>
+
         When compiling this we will encouter an error:
 
         <pre id="codeblock"><code><!-- beautify ignore:start -->error[E0499]: cannot borrow `counter` as mutable more than once at a time
@@ -173,8 +180,13 @@ impl Counter {
 9 | |     }) {
   | |______^ second mutable borrow occurs here
 <!-- beautify ignore:end --></code></pre>
+
+        The new problem (as the error message expains) is that that by using the continuation the <code
+            id="inlinecodeblock">&amp;mut self</code> reference still holds until the continuation returns as it is part
+        of <code id="inlinecodeblock">is_foo</code> which has <code id="inlinecodeblock">&amp;mut self</code>.<br>
         To fix this we can augment the continuation with a parameter of type <code id="inlinecodeblock">&amp;mut
             Self</code>:
+        <!--TODO: explain why this works-->
 
         <pre id="codeblock"><code><!-- beautify ignore:start -->use std::collections::HashMap;
 
